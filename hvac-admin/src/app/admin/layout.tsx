@@ -5,7 +5,7 @@ import { Sidebar } from '@/components/layout/Sidebar'
 import { TopBar } from '@/components/layout/TopBar'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from 'sonner'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { useEffect, useRef } from 'react'
 
 const queryClient = new QueryClient({
@@ -20,14 +20,18 @@ const queryClient = new QueryClient({
 function AdminShell({ children }: { children: React.ReactNode }) {
   const { session, isLoading } = useAuth()
   const router = useRouter()
-  const redirected = useRef(false)
+  const pathname = usePathname()
+  const isLoginPage = pathname === '/admin/login'
 
   useEffect(() => {
-    if (!isLoading && !session && !redirected.current) {
-      redirected.current = true
-      router.replace('/admin/login')
+    if (!isLoading) {
+      if (!session && !isLoginPage) {
+        router.replace('/admin/login')
+      } else if (session && isLoginPage) {
+        router.replace('/admin')
+      }
     }
-  }, [session, isLoading, router])
+  }, [session, isLoading, isLoginPage, router])
 
   if (isLoading) {
     return (
@@ -37,6 +41,16 @@ function AdminShell({ children }: { children: React.ReactNode }) {
           <p className="text-sm text-slate-400">Loading...</p>
         </div>
       </div>
+    )
+  }
+
+  if (isLoginPage) {
+    if (session) return null // redirecting to /admin
+    return (
+      <>
+        {children}
+        <Toaster position="top-right" richColors closeButton />
+      </>
     )
   }
 
@@ -65,3 +79,4 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     </QueryClientProvider>
   )
 }
+

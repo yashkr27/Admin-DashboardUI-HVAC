@@ -1,89 +1,122 @@
 @import "tailwindcss";
-@import "tailwindcss-animate";
 
-@layer base {
-  :root {
-    --font-inter: 'Inter', sans-serif;
-    --background: 248 250 252;
-    --foreground: 15 23 42;
-    --card: 255 255 255;
-    --card-foreground: 15 23 42;
-    --primary: 59 130 246;
-    --primary-foreground: 255 255 255;
-    --secondary: 241 245 249;
-    --secondary-foreground: 100 116 139;
-    --muted: 241 245 249;
-    --muted-foreground: 100 116 139;
-    --accent: 239 246 255;
-    --accent-foreground: 37 99 235;
-    --destructive: 239 68 68;
-    --destructive-foreground: 255 255 255;
-    --border: 226 232 240;
-    --input: 226 232 240;
-    --ring: 59 130 246;
-    --radius: 0.75rem;
-    --sidebar-bg: 15 23 42;
-  }
-
-  * {
-    border-color: rgb(var(--border));
-    box-sizing: border-box;
-  }
-
-  body {
-    background-color: rgb(var(--background));
-    color: rgb(var(--foreground));
-    font-family: var(--font-inter, 'Inter', system-ui, sans-serif);
-  }
+/* tailwindcss-animate keyframes */
+@keyframes accordion-down {
+  from { height: 0 }
+  to { height: var(--radix-accordion-content-height) }
+}
+@keyframes accordion-up {
+  from { height: var(--radix-accordion-content-height) }
+  to { height: 0 }
+}
+@keyframes fade-in-0 {
+  from { opacity: 0 }
+  to { opacity: 1 }
+}
+@keyframes fade-out-0 {
+  from { opacity: 1 }
+  to { opacity: 0 }
+}
+@keyframes zoom-in-95 {
+  from { transform: scale(0.95) }
+  to { transform: scale(1) }
+}
+@keyframes zoom-out-95 {
+  from { transform: scale(1) }
+  to { transform: scale(0.95) }
+}
+@keyframes slide-in-from-left-half {
+  from { transform: translateX(-50%) }
+  to { transform: translateX(0) }
+}
+@keyframes slide-in-from-top-48 {
+  from { transform: translateY(-48%) }
+  to { transform: translateY(0) }
+}
+@keyframes shimmer {
+  0% { background-position: -200% 0 }
+  100% { background-position: 200% 0 }
+}
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(12px) }
+  to { opacity: 1; transform: translateY(0) }
+}
+@keyframes spin {
+  to { transform: rotate(360deg) }
 }
 
-@layer utilities {
-  .font-sans {
-    font-family: var(--font-inter, 'Inter', system-ui, sans-serif);
-  }
+/* Radix UI animation data attributes */
+[data-state="open"].animate-in {
+  animation-fill-mode: forwards;
+}
+[data-state="closed"].animate-out {
+  animation-fill-mode: forwards;
+}
 
-  /* Scrollbar */
-  .scrollbar-thin {
-    scrollbar-width: thin;
-    scrollbar-color: #334155 transparent;
-  }
-  .scrollbar-thin::-webkit-scrollbar {
-    width: 4px;
-  }
-  .scrollbar-thin::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  .scrollbar-thin::-webkit-scrollbar-thumb {
-    background: #334155;
-    border-radius: 2px;
-  }
+.fade-in-0[data-state="open"] {
+  animation: fade-in-0 0.2s ease forwards;
+}
+.fade-out-0[data-state="closed"] {
+  animation: fade-out-0 0.2s ease forwards;
+}
+.zoom-in-95[data-state="open"] {
+  animation: zoom-in-95 0.2s ease forwards;
+}
+.zoom-out-95[data-state="closed"] {
+  animation: zoom-out-95 0.2s ease forwards;
+}
 
-  /* Glassmorphism */
-  .glass {
-    background: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-  }
+/* Global base */
+* {
+  box-sizing: border-box;
+}
 
-  /* Shimmer skeleton */
-  @keyframes shimmer {
-    0% { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
-  }
-  .skeleton {
-    background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 0.5rem;
-  }
+body {
+  font-family: var(--font-inter, 'Inter', system-ui, sans-serif);
+  background-color: #f8fafc;
+  color: #0f172a;
+  -webkit-font-smoothing: antialiased;
+}
 
-  /* Fade-in animation for cards */
-  @keyframes fade-up {
-    from { opacity: 0; transform: translateY(12px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  .animate-fade-up {
-    animation: fade-up 0.35s ease forwards;
-  }
+/* Scrollbar */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: #334155 transparent;
+}
+.scrollbar-thin::-webkit-scrollbar {
+  width: 4px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 2px;
+}
+
+/* Glassmorphism */
+.glass {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+/* Skeleton shimmer */
+.skeleton {
+  background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 0.5rem;
+}
+
+/* Fade-up entrance for cards */
+.animate-fade-up {
+  animation: fade-up 0.35s ease forwards;
+  opacity: 0;
+}
+
+/* Spinner */
+.animate-spin {
+  animation: spin 1s linear infinite;
 }
