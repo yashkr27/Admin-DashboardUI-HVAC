@@ -11,6 +11,8 @@ import {
   MessageSquare,
   Star,
   Zap,
+  Image,
+  Users,
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -20,18 +22,22 @@ interface SummaryData {
   totalEstimateValue: number
   avgRating: number
   monthlyTokens: number
+  totalGalleryItems: number
+  totalProfiles: number
 }
 
 async function fetchSummary(): Promise<SummaryData> {
   const today = new Date().toISOString().split('T')[0]
   const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()
 
-  const [leads, appointments, estimates, reviews, gemini] = await Promise.all([
+  const [leads, appointments, estimates, reviews, gemini, gallery, profiles] = await Promise.all([
     supabase.from('chatbot_leads').select('id', { count: 'exact', head: true }),
     supabase.from('appointments').select('id', { count: 'exact', head: true }).gte('date', today),
     supabase.from('estimates').select('amount'),
     supabase.from('reviews').select('rating'),
     supabase.from('gemini_usage_log').select('tokens_used').gte('created_at', monthStart),
+    supabase.from('gallery').select('id', { count: 'exact', head: true }),
+    supabase.from('profiles').select('id', { count: 'exact', head: true }),
   ])
 
   const totalEstimateValue = (estimates.data ?? []).reduce(
@@ -49,6 +55,8 @@ async function fetchSummary(): Promise<SummaryData> {
     totalEstimateValue,
     avgRating,
     monthlyTokens,
+    totalGalleryItems: gallery.count ?? 0,
+    totalProfiles: profiles.count ?? 0,
   }
 }
 
@@ -179,12 +187,20 @@ export default function AdminDashboardPage() {
       delay: 240,
     },
     {
-      icon: BarChart3,
-      label: 'Tables Managed',
-      value: '7',
-      href: '/admin',
-      color: 'bg-slate-100 text-slate-600',
+      icon: Image,
+      label: 'Gallery Images',
+      value: summaryLoading ? '…' : (summary?.totalGalleryItems ?? 0).toLocaleString(),
+      href: '/admin/gallery',
+      color: 'bg-indigo-50 text-indigo-600',
       delay: 300,
+    },
+    {
+      icon: Users,
+      label: 'Admin & Staff Profiles',
+      value: summaryLoading ? '…' : (summary?.totalProfiles ?? 0).toLocaleString(),
+      href: '/admin/profiles',
+      color: 'bg-sky-50 text-sky-600',
+      delay: 360,
     },
   ]
 
