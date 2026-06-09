@@ -6,7 +6,3 @@ export const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
 
-if (typeof window !== 'undefined') {
-  (window as any).supabase = supabase
-}
-

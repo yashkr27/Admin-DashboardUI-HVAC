@@ -23,19 +23,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // Get initial session
+    // Subscribe FIRST so we never miss an auth event
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session)
+      setIsLoading(false) // clear loading on every auth event
+    })
+
+    // Also fetch the initial session as a fallback (whichever resolves first wins)
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session)
       setIsLoading(false)
     })
 
-    // Subscribe to auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session)
-    })
-
     return () => subscription.unsubscribe()
   }, [])
+
 
   const signOut = async () => {
     await supabase.auth.signOut()

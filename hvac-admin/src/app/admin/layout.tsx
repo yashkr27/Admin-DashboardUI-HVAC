@@ -8,14 +8,28 @@ import { Toaster } from 'sonner'
 import { useRouter, usePathname } from 'next/navigation'
 import { useEffect, useRef } from 'react'
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      staleTime: 30_000,
+function makeQueryClient() {
+  return new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: 1,
+        staleTime: 30_000,
+      },
     },
-  },
-})
+  })
+}
+
+let browserQueryClient: QueryClient | undefined
+
+function getQueryClient() {
+  if (typeof window === 'undefined') {
+    // Server: always a fresh client per request
+    return makeQueryClient()
+  }
+  // Browser: reuse the same client across renders
+  if (!browserQueryClient) browserQueryClient = makeQueryClient()
+  return browserQueryClient
+}
 
 function AdminShell({ children }: { children: React.ReactNode }) {
   const { session, isLoading } = useAuth()
@@ -71,6 +85,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
 }
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  const queryClient = getQueryClient()
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
@@ -79,4 +94,5 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     </QueryClientProvider>
   )
 }
+
 
