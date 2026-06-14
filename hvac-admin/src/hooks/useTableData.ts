@@ -2,6 +2,7 @@
 
 import { supabase } from '@/lib/supabase'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useEffect } from 'react'
 import { toast } from 'sonner'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -25,7 +26,35 @@ export function useTableData(tableName: string) {
     queryKey,
     queryFn: () => fetchTableData(tableName),
     enabled: !!tableName,
+    // Always fetch fresh data on mount/focus — no stale cache
+    staleTime: 0,
+    refetchOnWindowFocus: true,
   })
+
+  // ── Supabase Realtime subscription ──────────────────────────────────────
+  // Automatically re-fetches when any INSERT / UPDATE / DELETE happens in
+  // the table on the Supabase side — gives live updates with no page reload.
+  useEffect(() => {
+    if (!tableName) return
+
+    const channel = supabase
+      .channel(`realtime-${tableName}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: tableName },
+        () => {
+          // Invalidate → React Query refetches immediately
+          queryClient.invalidateQueries({ queryKey })
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tableName])
+  // ────────────────────────────────────────────────────────────────────────
 
   const insertMutation = useMutation({
     mutationFn: async (record: AnyRecord) => {
@@ -62,7 +91,7 @@ export function useTableData(tableName: string) {
   })
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
+    mutationFn: async (id: string | number) => {
       const { error } = await supabase.from(tableName).delete().eq('id', id)
       if (error) throw error
     },
@@ -86,7 +115,7 @@ export function useTableData(tableName: string) {
     refetch: query.refetch,
     insert: insertMutation.mutateAsync,
     update: updateMutation.mutateAsync,
-    remove: deleteMutation.mutateAsync,
+    remove: deleteMutation.mutateAsync as (id: string | number) => Promise<void>,
     isInserting: insertMutation.isPending,
     isUpdating: updateMutation.isPending,
     isDeleting: deleteMutation.isPending,

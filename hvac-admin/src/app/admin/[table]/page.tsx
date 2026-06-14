@@ -38,11 +38,17 @@ import { useQuery } from '@tanstack/react-query'
 type AnyRecord = Record<string, any>
 
 const TABLE_ENUM_OPTIONS: Record<string, Record<string, string[]>> = {
+  chatbot_leads: {
+    status: ['new', 'contacted', 'qualified', 'closed'],
+    source: ['chatbot', 'web', 'phone', 'referral'],
+    service: ['AC Repair', 'AC Installation', 'Heating Repair', 'Heating Installation', 'Maintenance', 'Duct Cleaning', 'Other'],
+  },
   appointments: {
     status: ['Scheduled', 'Completed', 'Cancelled', 'No-Show'],
   },
   estimates: {
     status: ['Draft', 'Sent', 'Accepted', 'Rejected'],
+    service_type: ['AC Repair', 'AC Installation', 'Heating Repair', 'Heating Installation', 'Maintenance', 'Duct Cleaning', 'Other'],
   },
   profiles: {
     role: ['admin', 'staff', 'viewer'],
@@ -50,17 +56,40 @@ const TABLE_ENUM_OPTIONS: Record<string, Record<string, string[]>> = {
 }
 
 const STATUS_COLORS: Record<string, string> = {
+  // Appointments
   Scheduled: 'bg-blue-100 text-blue-700',
   Completed: 'bg-emerald-100 text-emerald-700',
   Cancelled: 'bg-red-100 text-red-700',
   'No-Show': 'bg-orange-100 text-orange-700',
+  // Estimates
   Draft: 'bg-slate-100 text-slate-600',
   Sent: 'bg-blue-100 text-blue-700',
   Accepted: 'bg-emerald-100 text-emerald-700',
   Rejected: 'bg-red-100 text-red-700',
+  // Profiles
   admin: 'bg-violet-100 text-violet-700',
   staff: 'bg-blue-100 text-blue-700',
   viewer: 'bg-slate-100 text-slate-500',
+  // Chatbot leads status
+  new: 'bg-sky-100 text-sky-700',
+  contacted: 'bg-amber-100 text-amber-700',
+  qualified: 'bg-emerald-100 text-emerald-700',
+  closed: 'bg-slate-100 text-slate-600',
+}
+
+const SOURCE_COLORS: Record<string, string> = {
+  chatbot: 'bg-violet-100 text-violet-700',
+  web: 'bg-blue-100 text-blue-700',
+  phone: 'bg-emerald-100 text-emerald-700',
+  referral: 'bg-amber-100 text-amber-700',
+}
+
+function SourceBadge({ value }: { value: string }) {
+  return (
+    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${SOURCE_COLORS[value] ?? 'bg-slate-100 text-slate-600'}`}>
+      {value}
+    </span>
+  )
 }
 
 function StatusBadge({ value }: { value: string }) {
@@ -306,7 +335,7 @@ export default function TablePage() {
     const renderers: Record<string, (value: unknown, row: any) => React.ReactNode> = {}
 
     if (tableName === 'chatbot_leads') {
-      renderers.email = (v, row) => v ? (
+      renderers.email = (v) => v ? (
         <div className="flex items-center gap-1.5">
           <span className="truncate max-w-[160px]">{String(v)}</span>
           <button onClick={() => { navigator.clipboard.writeText(String(v)); toast.success('Email copied') }} className="text-slate-300 hover:text-blue-500" title="Copy email">
@@ -321,6 +350,13 @@ export default function TablePage() {
             <Copy size={12} />
           </button>
         </div>
+      ) : <span className="text-slate-300">—</span>
+      renderers.status = (v) => v ? <StatusBadge value={String(v)} /> : <span className="text-slate-300">—</span>
+      renderers.source = (v) => v ? <SourceBadge value={String(v)} /> : <span className="text-slate-300">—</span>
+      renderers.service = (v) => v ? (
+        <span className="inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700">
+          {String(v)}
+        </span>
       ) : <span className="text-slate-300">—</span>
     }
 

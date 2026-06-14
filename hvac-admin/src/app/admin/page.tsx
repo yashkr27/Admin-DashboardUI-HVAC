@@ -2,8 +2,9 @@
 
 import { supabase } from '@/lib/supabase'
 import { formatCurrency } from '@/lib/utils'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { formatDistanceToNow } from 'date-fns'
+import { useEffect } from 'react'
 import {
   BarChart3,
   Calendar,
@@ -62,7 +63,7 @@ async function fetchSummary(): Promise<SummaryData> {
 
 async function fetchRecentActivity() {
   const [leads, appointments] = await Promise.all([
-    supabase.from('chatbot_leads').select('id, name, email, created_at').order('created_at', { ascending: false }).limit(5),
+    supabase.from('chatbot_leads').select('id, name, email, service, status, created_at').order('created_at', { ascending: false }).limit(5),
     supabase.from('appointments').select('id, name, date, status, created_at').order('created_at', { ascending: false }).limit(5),
   ])
 
@@ -135,15 +136,44 @@ function StarRating({ rating }: { rating: number }) {
 }
 
 export default function AdminDashboardPage() {
+  const queryClient = useQueryClient()
+
   const { data: summary, isLoading: summaryLoading } = useQuery({
     queryKey: ['dashboard-summary'],
     queryFn: fetchSummary,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
   })
 
   const { data: activity, isLoading: activityLoading } = useQuery({
     queryKey: ['dashboard-activity'],
     queryFn: fetchRecentActivity,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
   })
+
+  // Realtime: refresh dashboard when leads or appointments change
+  useEffect(() => {
+    const channel = supabase
+      .channel('dashboard-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'chatbot_leads' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] })
+        queryClient.invalidateQueries({ queryKey: ['dashboard-activity'] })
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] })
+        queryClient.invalidateQueries({ queryKey: ['dashboard-activity'] })
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'estimates' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] })
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'reviews' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] })
+      })
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [queryClient])
 
   const cards = [
     {
@@ -255,7 +285,9 @@ export default function AdminDashboardPage() {
                         : ''}
                     </p>
                     <p className="text-xs text-slate-400">
-                      {item._type === 'lead' ? 'New lead' : `Appointment · ${(item as { status?: string }).status ?? 'Scheduled'}`}
+                      {item._type === 'lead'
+                        ? `New lead${(item as { service?: string }).service ? ` · ${(item as { service?: string }).service}` : ''}`
+                        : `Appointment · ${(item as { status?: string }).status ?? 'Scheduled'}`}
                       {item.created_at
                         ? ` · ${formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}`
                         : ''}

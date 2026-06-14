@@ -1,5 +1,8 @@
 // Manual type stubs for all 7 Supabase tables in the `public` schema.
 // Re-generate with: npx supabase gen types typescript --project-id <id> > src/types/database.ts
+//
+// Last synced: verified against live DB — chatbot_leads has service + source columns;
+//              gemini_usage_log uses integer id (bigint serial).
 
 export type Json = string | number | boolean | null | { [key: string]: Json } | Json[]
 
@@ -12,7 +15,10 @@ export interface Database {
           name: string | null
           phone: string | null
           email: string | null
-          status: string | null
+          service: string | null   // e.g. "AC Repair", "Heating", etc.
+          source: string | null    // e.g. "chatbot", "web", "phone", "referral"
+          status: string | null    // e.g. "new", "contacted", "qualified", "closed"
+          notes: string | null
           created_at: string | null
         }
         Insert: Omit<Database['public']['Tables']['chatbot_leads']['Row'], 'id' | 'created_at'>
@@ -59,7 +65,7 @@ export interface Database {
       }
       gemini_usage_log: {
         Row: {
-          id: string
+          id: number              // bigint serial (integer), NOT uuid
           prompt: string | null
           response: string | null
           tokens_used: number | null
